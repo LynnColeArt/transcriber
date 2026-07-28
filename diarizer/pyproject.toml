@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "transcriber-diarizer"
+version = "0.2.0"
+description = "Local pyannote speaker diarization helper for transcriber"
+requires-python = ">=3.10"
+dependencies = [
+  "pyannote.audio>=4.0,<5",
+]
+
+[project.scripts]
+transcriber-diarize = "transcriber_diarizer.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/transcriber_diarizer"]
