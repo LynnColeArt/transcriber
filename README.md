@@ -6,7 +6,7 @@
 transcriber <file in> <file out>
 ```
 
-It is designed to be called from anywhere on your system. Media decoding is handled by `ffmpeg`, optional vocal stem isolation is handled by Demucs, and transcription is handled by `whisper.cpp` with Whisper large-v3 by default.
+It is designed to be called from anywhere on your system. Media decoding is handled by `ffmpeg`, vocal stem isolation by Demucs, transcription by `whisper.cpp` with Whisper large-v3, and speaker detection by pyannote Community-1.
 
 ## Features
 
@@ -18,7 +18,7 @@ It is designed to be called from anywhere on your system. Media decoding is hand
 - Detects and labels an unknown number of speakers locally with pyannote Community-1 by default.
 - Writes speaker-labeled plain text by default, with explicit JSON, SRT, and VTT output modes.
 - Runs locally with no hosted transcription API.
-- Provides `transcriber doctor` for dependency checks.
+- Provides `transcriber setup` for one-command model installation and `transcriber doctor` for dependency checks.
 
 ## Pipeline
 
@@ -33,59 +33,62 @@ It is designed to be called from anywhere on your system. Media decoding is hand
 5. Infer the number of speakers, run local speaker diarization, and align speaker intervals to Whisper token timestamps.
 6. Write speaker-labeled plain text by default, or the explicitly requested structured/subtitle format.
 
-## Install
+## Quick start
 
-Build and install the Go command:
+Install the system prerequisites. On Ubuntu:
+
+```sh
+sudo apt install build-essential cmake ffmpeg git pipx
+```
+
+Accept the access conditions for [pyannote Community-1](https://huggingface.co/pyannote/speaker-diarization-community-1) and create a read token. The setup command prompts for it securely when needed. For unattended setup, export it first:
+
+```sh
+export HF_TOKEN="your-token"
+```
+
+Build the CLI and run the model installer:
 
 ```sh
 make install
-```
-
-This installs `transcriber` to `~/.local/bin`.
-
-Make sure `~/.local/bin` is on your shell `PATH`:
-
-```sh
 export PATH="$HOME/.local/bin:$PATH"
+transcriber setup
 ```
 
-Install `ffmpeg` with your system package manager. On Ubuntu:
+`transcriber setup` installs or refreshes the local helpers and prepares all default models:
+
+- Whisper large-v3
+- Silero VAD 6.2
+- Demucs `htdemucs`
+- pyannote Community-1
+
+The command is safe to rerun and reuses cached downloads. Expect several gigabytes of model and Python dependency data. When `nvcc` is available, whisper.cpp is built with CUDA automatically; set `WHISPER_ACCELERATOR=cpu` or `WHISPER_ACCELERATOR=cuda` to override detection.
+
+Verify everything and transcribe:
 
 ```sh
-sudo apt install ffmpeg
+transcriber doctor
+transcriber recording.mp3 recording.txt
 ```
 
-Install `whisper.cpp` and download the default large-v3 and Silero VAD models:
+`make setup` is a shortcut for `make install` followed by `transcriber setup`.
+
+### Manual setup
+
+The individual installers remain available for troubleshooting or partial installations:
 
 ```sh
 scripts/setup-whispercpp.sh
-```
-
-The setup script enables CUDA automatically when `nvcc` is available. Override detection with `WHISPER_ACCELERATOR=cpu` or `WHISPER_ACCELERATOR=cuda`.
-
-Install Demucs and prime the stem-separation model used by the default `auto` mode:
-
-```sh
 scripts/setup-demucs.sh
-```
-
-Install the local speaker diarizer used by default:
-
-```sh
 scripts/setup-diarization.sh
 ```
 
-Community-1 requires a one-time setup outside this repository:
-
-1. Accept the conditions at [pyannote Community-1](https://huggingface.co/pyannote/speaker-diarization-community-1).
-2. Create a Hugging Face read token.
-3. Export `HF_TOKEN` for the first model download.
-
-After the model is cached, diarization runs locally. Set `HF_HUB_OFFLINE=1` to prohibit network access during later runs. The helper disables pyannote inference telemetry by default.
+After the models are cached, inference runs locally. Set `HF_HUB_OFFLINE=1` to prohibit later network access. The diarization helper disables pyannote inference telemetry by default.
 
 ## Usage
 
 ```sh
+transcriber setup
 transcriber recording.mp3 recording.txt
 transcriber -format srt call.mp4 call.srt
 transcriber -format json podcast.wav podcast.json
@@ -138,6 +141,7 @@ DEMUCS_BIN
 DEMUCS_MODEL
 TRANSCRIBER_PREPROCESS
 TRANSCRIBER_FORMAT
+TRANSCRIBER_SETUP
 DIARIZER_BIN
 DIARIZATION_MODEL
 DIARIZATION_DEVICE

@@ -21,10 +21,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Run local pyannote speaker diarization and write JSON.",
     )
     parser.add_argument("--version", action="version", version=__version__)
-    parser.add_argument("--audio", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--audio", type=Path)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
+    parser.add_argument(
+        "--download-only",
+        action="store_true",
+        help="download and validate the diarization model without processing audio",
+    )
     parser.add_argument("--num-speakers", type=positive_int)
     parser.add_argument("--min-speakers", type=positive_int)
     parser.add_argument("--max-speakers", type=positive_int)
@@ -77,7 +82,9 @@ def write_json_atomic(path: Path, document: dict[str, Any]) -> None:
 
 
 def run(args: argparse.Namespace) -> None:
-    if not args.audio.is_file():
+    if not args.download_only and (args.audio is None or args.output is None):
+        raise ValueError("--audio and --output are required unless --download-only is used")
+    if args.audio is not None and not args.audio.is_file():
         raise FileNotFoundError(f"audio file not found: {args.audio}")
     if args.num_speakers and (args.min_speakers or args.max_speakers):
         raise ValueError("--num-speakers cannot be combined with a speaker range")
@@ -102,8 +109,12 @@ def run(args: argparse.Namespace) -> None:
     if pipeline is None:
         raise RuntimeError(
             "the diarization model could not be loaded; accept its Hugging Face "
-            "conditions and export a read-scoped HF_TOKEN before the first run"
+            "conditions and authenticate with `hf auth login` or a read-scoped HF_TOKEN"
         )
+    if args.download_only:
+        print(f"diarization model is ready: {model_source}", file=sys.stderr)
+        return
+
     pipeline.to(torch.device(device))
 
     inference_options: dict[str, int] = {}

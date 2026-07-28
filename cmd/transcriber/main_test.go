@@ -1,10 +1,28 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"slices"
 	"testing"
 )
+
+func TestFindSetupScriptUsesEnvironmentOverride(t *testing.T) {
+	directory := t.TempDir()
+	script := filepath.Join(directory, "setup-models.sh")
+	if err := os.WriteFile(script, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("TRANSCRIBER_SETUP", script)
+
+	got, err := findSetupScript()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != script {
+		t.Fatalf("findSetupScript() = %q, want %q", got, script)
+	}
+}
 
 func TestDefaultConfigDetectsSpeakersAutomatically(t *testing.T) {
 	t.Setenv("TRANSCRIBER_FORMAT", "")

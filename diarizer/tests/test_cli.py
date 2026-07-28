@@ -2,7 +2,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from transcriber_diarizer.cli import annotation_segments, select_device, write_json_atomic
+from transcriber_diarizer.cli import (
+    annotation_segments,
+    parse_args,
+    run,
+    select_device,
+    write_json_atomic,
+)
 
 
 class Turn:
@@ -26,6 +32,16 @@ class TorchWithoutCUDA:
 
 
 class CLITest(unittest.TestCase):
+    def test_download_only_does_not_require_audio_paths(self) -> None:
+        args = parse_args(["--download-only"])
+        self.assertTrue(args.download_only)
+        self.assertIsNone(args.audio)
+        self.assertIsNone(args.output)
+
+    def test_transcription_mode_requires_audio_and_output(self) -> None:
+        with self.assertRaisesRegex(ValueError, "--audio and --output"):
+            run(parse_args([]))
+
     def test_annotation_segments_are_stable_and_sorted(self) -> None:
         self.assertEqual(
             annotation_segments(Annotation()),

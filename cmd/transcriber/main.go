@@ -65,6 +65,8 @@ func run(args []string) error {
 		switch args[0] {
 		case "doctor":
 			return doctor()
+		case "setup":
+			return setupModels(args[1:])
 		case "version", "--version", "-version":
 			fmt.Println(version)
 			return nil
@@ -568,6 +570,7 @@ func shellQuote(args []string) string {
 func printUsage(w io.Writer) {
 	fmt.Fprintln(w, `Usage:
   transcriber [flags] <file in> <file out>
+  transcriber setup
   transcriber doctor
 
 Examples:
@@ -602,5 +605,5 @@ Flags:
 Environment:
   WHISPER_MODEL, WHISPER_BIN, WHISPER_VAD_MODEL, FFMPEG_BIN,
   DEMUCS_BIN, DEMUCS_MODEL, DIARIZER_BIN, DIARIZATION_MODEL,
-  DIARIZATION_DEVICE, TRANSCRIBER_FORMAT, HF_TOKEN`)
+  DIARIZATION_DEVICE, TRANSCRIBER_FORMAT, TRANSCRIBER_SETUP, HF_TOKEN`)
 }
