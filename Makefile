@@ -15,7 +15,7 @@ test:
 	go test ./...
 
 fmt:
-	gofmt -w cmd/transcriber/main.go cmd/transcriber/main_test.go
+	gofmt -w cmd/transcriber/*.go
 
 doctor:
 	go run ./cmd/transcriber doctor
